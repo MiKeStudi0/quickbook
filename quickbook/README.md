@@ -1,147 +1,242 @@
-# QuickBook Backend API & Staff Dashboard
+# QuickBook — Event Booking & Binary Referral Platform
 
-QuickBook is a complete event booking backend platform built with **Python**, **Django**, and **Django REST Framework (DRF)**. It features custom user authentication with auto-generated referral codes, concurrent-safe event ticket booking using row locking, a binary referral network, a custom staff management dashboard, rate limiting, and Swagger/OpenAPI documentation.
+QuickBook is an event booking backend platform built with **Python**, **Django 5**, and **Django REST Framework (DRF)**. The platform provides REST APIs for high-concurrency ticket reservations using database row locking, an automated multi-level binary referral network powered by Breadth-First Search (BFS) placement, and a custom Staff & Vendor Management Dashboard.
 
 ---
 
-## 1. Quick Setup & Seed Instructions
+## Quick Access
 
-### Installation & Execution
+### Production URLs
+- **Live Application**: [http://quickbook.midhunnk.in](http://quickbook.midhunnk.in)
+- **Swagger UI**: [http://quickbook.midhunnk.in/api/docs/](http://quickbook.midhunnk.in/api/docs/)
+- **OpenAPI Schema**: [http://quickbook.midhunnk.in/api/schema/](http://quickbook.midhunnk.in/api/schema/)
+- **ReDoc API Documentation**: [http://quickbook.midhunnk.in/api/redoc/](http://quickbook.midhunnk.in/api/redoc/)
+- **Staff & Vendor Dashboard**: [http://quickbook.midhunnk.in/dashboard/](http://quickbook.midhunnk.in/dashboard/)
+- **Customer Web Portal**: [http://quickbook.midhunnk.in/customer/login/](http://quickbook.midhunnk.in/customer/login/)
+
+### Local Development URLs
+- **Local Application**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- **Local Swagger UI**: [http://127.0.0.1:8000/api/docs/](http://127.0.0.1:8000/api/docs/)
+- **Local OpenAPI Schema**: [http://127.0.0.1:8000/api/schema/](http://127.0.0.1:8000/api/schema/)
+- **Local ReDoc**: [http://127.0.0.1:8000/api/redoc/](http://127.0.0.1:8000/api/redoc/)
+- **Local Staff Dashboard**: [http://127.0.0.1:8000/dashboard/](http://127.0.0.1:8000/dashboard/)
+
+### GitHub Repository
+- **Repository URL**: [https://github.com/MiKeStudi0/quickbook](https://github.com/MiKeStudi0/quickbook)
+
+---
+
+## Tech Stack
+
+| Component | Technology | Usage in Repository |
+|---|---|---|
+| **Language** | Python 3.11+ | Core runtime language |
+| **Web Framework** | Django 5.2+ | Core application framework & ORM |
+| **REST Framework** | Django REST Framework | RESTful API views, serializers & pagination |
+| **Authentication** | SimpleJWT | JWT access and refresh token authentication |
+| **Filtering** | `django-filter` | Backend search, date, and vendor filtering |
+| **API Schema** | `drf-spectacular` | OpenAPI 3.0 schema generation, Swagger UI & ReDoc |
+| **Database** | SQLite 3 | Embedded database (`db.sqlite3`) as required |
+| **WSGI Server** | Gunicorn | Production application server (listening on `127.0.0.1:8001`) |
+| **Reverse Proxy** | Nginx | Production web server handling HTTP requests |
+
+---
+
+## Machine Test Requirements Compliance
+
+| Requirement | Status | Implementation Details |
+|---|---|---|
+| **User Registration** | ✅ Implemented | `POST /api/auth/register/` (Auto-generates unique 8-character referral code) |
+| **User Login** | ✅ Implemented | `POST /api/auth/login/` (Returns JWT access & refresh tokens) |
+| **User Logout** | ✅ Implemented | `POST /api/auth/logout/` (Blacklists refresh token) |
+| **Token Authentication** | ✅ Implemented | SimpleJWT Bearer authentication on protected routes |
+| **Protected APIs** | ✅ Implemented | `IsAuthenticated` permission guards across bookings & user endpoints |
+| **Event Browsing** | ✅ Implemented | `GET /api/events/` and `GET /api/events/<id>/` |
+| **Event Search/Filtering** | ✅ Implemented | Backend query filtering by keyword (`search`), `vendor`, and `date` |
+| **Ticket Booking** | ✅ Implemented | `POST /api/events/<pk>/book/` with seat availability checks |
+| **Booking Cancellation** | ✅ Implemented | `POST /api/bookings/<pk>/cancel/` (restores seat availability) |
+| **Booking History** | ✅ Implemented | `GET /api/bookings/` filtered by user role and status |
+| **Seat Availability** | ✅ Implemented | Validated under lock prior to updating seat counts |
+| **Concurrent Booking Protection** | ✅ Implemented | `transaction.atomic()` with `select_for_update()` database row locking |
+| **Binary Referral System** | ✅ Implemented | Auto-generated referral codes and linked user node placement |
+| **Automatic Node Placement** | ✅ Implemented | Breadth-First Search (BFS) level-order tree placement in `referrals/services.py` |
+| **Referral Tree API** | ✅ Implemented | `GET /api/referrals/<user_id>/tree/` (Returns full nested JSON tree) |
+| **Referral Root API** | ✅ Implemented | `GET /api/referrals/<user_id>/root/` (Ascends tree to top ancestor) |
+| **Referral Statistics API** | ✅ Implemented | `GET /api/referrals/<user_id>/stats/` (`left_count`, `right_count`, `total_network`) |
+| **Custom Staff Dashboard** | ✅ Implemented | Dedicated dashboard at `/dashboard/` (no Django admin dependency) |
+| **Vendor Management** | ✅ Implemented | View, create, and update vendor accounts (`/dashboard/vendors/`) |
+| **Event Management** | ✅ Implemented | View, create, update, search, and filter events (`/dashboard/events/`) |
+| **User Management** | ✅ Implemented | View users list, user details, and interactive referral tree search (`/dashboard/users/`) |
+| **Swagger/OpenAPI Docs** | ✅ Implemented | Mounted at `/api/docs/` and `/api/schema/` |
+| **Rate Limiting** | ✅ Implemented | DRF Throttling (`AnonRateThrottle` 100/day, `UserRateThrottle` 1000/day) |
+
+---
+
+## API Endpoints Reference
+
+### Authentication
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `POST` | `/api/auth/register/` | Register new user with optional referral code | No |
+| `POST` | `/api/auth/login/` | Login and receive JWT access & refresh tokens | No |
+| `POST` | `/api/auth/logout/` | Blacklist refresh token and logout | Yes |
+| `GET` | `/api/auth/me/` | Retrieve authenticated user profile details | Yes |
+
+### Events
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `GET` | `/api/events/` | Browse events with search, date, vendor filter & pagination | No |
+| `POST` | `/api/events/` | Create a new event (Staff or Vendor) | Yes |
+| `GET` | `/api/events/<id>/` | Retrieve details for a specific event | No |
+| `PUT` / `PATCH` | `/api/events/<id>/` | Update an existing event | Yes |
+| `DELETE` | `/api/events/<id>/` | Delete an event | Yes |
+| `POST` | `/api/events/<pk>/book/` | Book tickets for an event (atomic row locked) | Yes |
+
+### Bookings
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `GET` | `/api/bookings/` | Retrieve user booking history (Staff views all) | Yes |
+| `POST` | `/api/bookings/<pk>/cancel/` | Cancel booking and restore available seats | Yes |
+
+### Referrals
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `GET` | `/api/referrals/<user_id>/tree/` | Retrieve full binary referral tree JSON structure | No |
+| `GET` | `/api/referrals/<user_id>/root/` | Find top root ancestor node for user | No |
+| `GET` | `/api/referrals/<user_id>/stats/` | Retrieve left team count, right team count & total network | No |
+
+---
+
+## Architecture & Request Flow
+
+### Application Structure
+
+```text
+quickbook/
+├── accounts/          # Custom User model, auth views, JWT serializers & signals
+├── events/            # Event model, views, filters, and serializers
+├── bookings/          # Booking model, atomic reservation logic & cancellation
+├── referrals/         # ReferralNode model, BFS placement service & tree serializers
+├── dashboard/         # Custom Staff & Vendor management views and templates
+├── config/            # Django settings, URL routing, and OpenAPI configuration
+├── manage.py          # Django management script
+├── requirements.txt   # Project dependencies
+└── README.md          # Project documentation
+```
+
+### Request Flow
+```text
+HTTP Client (REST / Web)
+   └── Django URL Router (config/urls.py)
+        └── API View / Class-Based View
+             ├── DRF Serializer (Validation & Deserialization)
+             ├── Service Layer (referrals/services.py & Atomic Transactions)
+             └── Django ORM (Database query with select_for_update)
+```
+
+---
+
+## Booking Consistency & Concurrency Protection
+
+To ensure high concurrency safety and prevent double-booking under simultaneous traffic:
+
+- Ticket reservation in `BookEventView` (`bookings/views.py`) executes inside `transaction.atomic()`.
+- The target event record is fetched using `Event.objects.select_for_update()`, acquiring an exclusive row-level database lock.
+- Available seat validation is performed under lock (`available_seats >= quantity`).
+- Upon verification, seat counts are decremented atomically and saved before releasing the lock.
+- Operational retry logic is implemented to handle lock contention cleanly.
+
+---
+
+## Binary Referral Network System
+
+- **Referral Code Generation**: When a user registers, an 8-character uppercase hex code is automatically generated (`accounts/models.py`).
+- **Placement Algorithm**: When a user registers with a valid referral code:
+  1. The referrer's node is located in the `ReferralNode` table.
+  2. Level-Order Breadth-First Search (BFS) in `referrals/services.py` traverses the tree to find the first open `left` or `right` child position.
+  3. The new user's node is linked to the parent at the open slot.
+- **Tree & Metrics**: The API calculates left branch count, right branch count, total network size, and returns nested tree objects or top root nodes.
+
+---
+
+## Setup & Local Development
+
+### 1. Clone & Navigate
 ```bash
-# 1. Navigate to project root
+git clone https://github.com/MiKeStudi0/quickbook.git
 cd quickbook
+```
 
-# 2. Activate virtual environment
+### 2. Virtual Environment Setup
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
 # Windows (PowerShell):
 .\venv\Scripts\Activate.ps1
 # Linux / macOS:
 source venv/bin/activate
+```
 
-# 3. Install dependencies
+### 3. Install Dependencies
+```bash
 pip install -r requirements.txt
+```
 
-# 4. Run database migrations
+### 4. Database Setup & Seed Data
+```bash
+# Run database migrations
 python manage.py migrate
 
-# 5. Seed sample users, events, bookings & binary referral tree
+# Seed demo users, realistic events, bookings & binary referral tree
 python manage.py seed_data
+```
 
-# 6. Run development server
+### 5. Run Development Server
+```bash
 python manage.py runserver
 ```
 
 ---
 
-## 2. Seeded Login Credentials
+## Seeded Demo Credentials
 
-Below are the pre-configured credentials generated by `python manage.py seed_data`:
-
-| Role | Username | Password | Email | Referral Code | Notes / Access |
-|---|---|---|---|---|---|
-| **Staff Admin** | `admin` | `admin123` | `admin@quickbook.com` | `DDD1B961` | Access to `/dashboard/` & Admin APIs |
-| **Vendor 1** | `nexus_events` | `vendor123` | `contact@nexusevents.com` | `VEND1001` | Nexus Events Corp |
-| **Vendor 2** | `pulse_entertainment` | `vendor123` | `info@pulseentertainment.com` | `VEND2002` | Pulse Entertainment |
-| **Vendor 3** | `summit_productions` | `vendor123` | `hello@summitproductions.io` | `VEND3003` | Summit Productions |
-| **Vendor 4** | `starlight_media` | `vendor123` | `team@starlightmedia.com` | `VEND4004` | Starlight Media Group |
-| **Customer (Root)** | `alex_morgan` | `customer123` | `alex.morgan@gmail.com` | `5C22E205` | Root node of binary referral network |
-| **Customer** | `sarah_connor` | `customer123` | `sarah.connor@yahoo.com` | `BFE7FEC5` | Placed at `alex_morgan.left` |
-| **Customer** | `david_miller` | `customer123` | `david.miller@outlook.com` | `9B490976` | Placed at `alex_morgan.right` |
-| **Customer** | `emily_watson` | `customer123` | `emily.watson@gmail.com` | `671A3848` | Placed at `sarah_connor.left` (via BFS) |
-| **Customer** | `michael_brown` | `customer123` | `michael.brown@tech.io` | `C9DFF01B` | Placed at `sarah_connor.right` (via BFS) |
-
+| Role | Username | Password | Notes |
+|---|---|---|---|
+| **Staff Admin** | `admin` | `admin123` | Full access to `/dashboard/` |
+| **Vendor** | `nexus_events` | `vendor123` | Nexus Events Corp vendor portal |
+| **Customer (Tree Root)** | `alex_morgan` | `customer123` | Root of binary referral tree (`5C22E205`) |
+| **Customer (Left Child)** | `sarah_connor` | `customer123` | Placed at `alex_morgan.left` |
+| **Customer (Right Child)**| `david_miller` | `customer123` | Placed at `alex_morgan.right` |
 
 ---
 
-## 3. Automated Test Suite
+## Automated Test Suite
 
-Run the full automated test suite (29 tests across all apps):
+The repository includes 29 unit tests covering authentication, atomic booking concurrency, referral tree placement, and dashboard views.
+
+Run the test suite:
 ```bash
 python manage.py test
 ```
 
-### Test Coverage Checklist
-
-#### Authentication (`accounts/tests.py`)
-- `test_register_user`: Successful registration & auto-referral code assignment.
-- `test_login_user`: Authentication & JWT token retrieval.
-- `test_login_invalid_credentials`: Handles incorrect password / non-existent user (`400 Bad Request`).
-- `test_protected_me_endpoint`: Access control on `/api/auth/me/` (`401 Unauthorized` vs `200 OK` with Bearer token).
-- `test_logout_user`: Refresh token blacklisting.
-
-#### Booking & Concurrency (`bookings/tests.py`)
-- `test_book_event_success`: Booking valid seats.
-- `test_book_event_insufficient_seats`: Rejection when requested seats exceed availability.
-- `test_book_event_invalid_quantity`: Rejection when quantity is `0` or negative (`-2`).
-- `test_cancel_booking`: Cancelling booking & restoring seats.
-- **Concurrency Test (`test_concurrent_two_users_booking_four_seats_each`)**:
-  - `available_seats = 5`
-  - User 1 requests `4 seats`, User 2 requests `4 seats` simultaneously via parallel threads.
-  - **Result**: Exactly 1 user succeeds, 1 user fails, `available_seats` becomes `1`. It NEVER results in `available_seats = -3` or `8 seats` booked!
-- `test_concurrent_booking_prevention_of_overselling`: Multi-threaded test with 10 parallel requests under database row locks.
-
-#### Binary Referral Network (`referrals/tests.py`)
-- `test_left_and_right_placement_structure`: Verifies initial referral goes to `left` child, second referral goes to `right` child.
-- `test_referral_tree_api`: Verifies `GET /api/referrals/<user_id>/tree/` returns complete nested binary tree JSON.
-- `test_referral_root_api`: Verifies `GET /api/referrals/<user_id>/root/` ascends tree to return root user.
-- `test_referral_stats_api`: Verifies `GET /api/referrals/<user_id>/stats/` returns accurate `left_team_count`, `right_team_count`, and `total_team_count`.
-- `test_invalid_referral_code_rejection`: Rejection when registering with an invalid referral code.
-
-#### Staff Dashboard (`dashboard/tests.py`)
-- Staff authentication enforcement, metric calculations, vendor CRUD, event CRUD, and user detail referral tree context.
-
 ---
 
-## 4. Architecture & Placement Logic
-
-### Binary Referral Network Placement
-Users are placed into the binary referral network using a **Level-Order Breadth-First Search (BFS)** algorithm:
+## Production Deployment Architecture
 
 ```text
-            customer1 (Root)
-             /           \
-     customer2           customer3
-       /     \
-customer4   customer5
+Internet Client
+   └── Nginx (Port 80)
+        └── Gunicorn WSGI (127.0.0.1:8001)
+             └── Django 5 Application
+                  └── SQLite Database (db.sqlite3)
 ```
-When `customer1` refers new users:
-1. First referral (`customer2`) is placed at `customer1.left`.
-2. Second referral (`customer3`) is placed at `customer1.right`.
-3. Third referral (`customer4`) is placed at `customer2.left` (via BFS).
-4. Fourth referral (`customer5`) is placed at `customer2.right` (via BFS).
 
-### Concurrency & Row Locking
-To eliminate race conditions and overselling under simultaneous requests:
-- **`POST /api/events/<id>/book/`** executes inside `transaction.atomic()`.
-- Rows are locked using `Event.objects.select_for_update()`.
-- Seat availability is validated under lock before updating `available_seats`.
-
----
-
-## 5. Portals & API Endpoints Reference
-
-### Web Portals
-| Portal | URL | Credentials / Notes |
-|---|---|---|
-| **Root Landing Page** | `http://127.0.0.1:8000/` | Interactive entry portal for Customer, Staff/Vendor, and Swagger |
-| **Customer Web Portal** | `http://127.0.0.1:8000/customer/login/` | `customer1` / `customer123` (Browse events, book tickets, view bookings & referral network) |
-| **Staff & Vendor Portal** | `http://127.0.0.1:8000/dashboard/login/` | `admin` / `admin123` (Full Staff Dashboard)<br>`vendor1` / `vendor123` (Vendor Events Portal) |
-| **Swagger API Docs** | `http://127.0.0.1:8000/api/docs/` | Interactive OpenAPI 3.0 REST API documentation |
-| **ReDoc API Docs** | `http://127.0.0.1:8000/api/redoc/` | Structured OpenAPI ReDoc API reference |
-
-### REST API Endpoints
-
-| Category | Endpoint | Method | Description |
-|---|---|---|---|
-| **Auth Register** | `http://127.0.0.1:8000/api/auth/register/` | POST | Register new user with optional referral code. |
-| **Auth Login** | `http://127.0.0.1:8000/api/auth/login/` | POST | Login and receive JWT access & refresh tokens. |
-| **Auth Logout** | `http://127.0.0.1:8000/api/auth/logout/` | POST | Blacklist refresh token & logout. |
-| **Auth Current User**| `http://127.0.0.1:8000/api/auth/me/` | GET | Retrieve authenticated user details. |
-| **List/Search Events**| `http://127.0.0.1:8000/api/events/` | GET | Browse events with search, filtering & pagination. |
-| **Event Details** | `http://127.0.0.1:8000/api/events/<id>/` | GET | Retrieve specific event details. |
-| **Book Event** | `http://127.0.0.1:8000/api/events/<id>/book/` | POST | Atomic concurrent-safe ticket booking (`select_for_update`). |
-| **User Bookings** | `http://127.0.0.1:8000/api/bookings/` | GET | Retrieve booking history for authenticated user. |
-| **Cancel Booking**| `http://127.0.0.1:8000/api/bookings/<id>/cancel/` | POST | Cancel booking and restore available seats. |
-| **Referral Tree** | `http://127.0.0.1:8000/api/referrals/<user_id>/tree/` | GET | Get binary referral tree structure. |
-| **Referral Root** | `http://127.0.0.1:8000/api/referrals/<user_id>/root/` | GET | Get root user of referral tree. |
-| **Referral Stats**| `http://127.0.0.1:8000/api/referrals/<user_id>/stats/` | GET | Get left team count, right team count & total. |
-
+- **Live URL**: [http://quickbook.midhunnk.in](http://quickbook.midhunnk.in)
+- **Gunicorn Internal Socket**: `127.0.0.1:8001`
+- **Static Assets**: Served via Nginx at `/static/`
