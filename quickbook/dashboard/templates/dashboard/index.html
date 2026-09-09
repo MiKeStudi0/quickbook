@@ -1,0 +1,144 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - QuickBook{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 pb-4 border-b border-zinc-200/60">
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Dashboard Overview</h1>
+        <p class="text-sm text-zinc-500 mt-1">Platform performance metrics and live operations</p>
+    </div>
+    <div class="mt-4 sm:mt-0 flex items-center gap-2">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 me-2 animate-pulse"></span> Live Sync
+        </span>
+    </div>
+</div>
+
+<!-- Metrics Cards Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+    <!-- Customers Card -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Customers</span>
+            <div class="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700">
+                <i class="ri-user-line text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-baseline">
+            <span class="text-3xl font-bold tracking-tight text-zinc-900">{{ total_customers }}</span>
+        </div>
+    </div>
+
+    <!-- Vendors Card -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Vendors</span>
+            <div class="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700">
+                <i class="ri-store-2-line text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-baseline">
+            <span class="text-3xl font-bold tracking-tight text-zinc-900">{{ total_vendors }}</span>
+        </div>
+    </div>
+
+    <!-- Events Card -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Events</span>
+            <div class="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700">
+                <i class="ri-calendar-event-line text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-baseline">
+            <span class="text-3xl font-bold tracking-tight text-zinc-900">{{ total_events }}</span>
+        </div>
+    </div>
+
+    <!-- Bookings Card -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Total Bookings</span>
+            <div class="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700">
+                <i class="ri-ticket-2-line text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-baseline">
+            <span class="text-3xl font-bold tracking-tight text-zinc-900">{{ total_bookings }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Recent Bookings Table -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-base font-semibold text-zinc-900">Recent Bookings</h3>
+            <span class="text-xs text-zinc-400 font-medium">Latest 5</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-zinc-200/60 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                        <th class="py-2.5 px-3">User</th>
+                        <th class="py-2.5 px-3">Event</th>
+                        <th class="py-2.5 px-3">Qty</th>
+                        <th class="py-2.5 px-3 text-right">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-100 text-sm">
+                    {% for b in recent_bookings %}
+                    <tr class="hover:bg-zinc-50/80 transition-colors">
+                        <td class="py-3 px-3 font-medium text-zinc-900">{{ b.user.username }}</td>
+                        <td class="py-3 px-3 text-zinc-600">{{ b.event.name }}</td>
+                        <td class="py-3 px-3 font-semibold text-zinc-800">{{ b.quantity }}</td>
+                        <td class="py-3 px-3 text-right">
+                            {% if b.status == 'CONFIRMED' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">Confirmed</span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">Cancelled</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="py-6 text-center text-xs text-zinc-400">No bookings recorded yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Upcoming Events Table -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+        <div class="flex items-center justify-between mb-5">
+            <h3 class="text-base font-semibold text-zinc-900">Upcoming Events</h3>
+            <span class="text-xs text-zinc-400 font-medium">Scheduled</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-zinc-200/60 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                        <th class="py-2.5 px-3">Event Name</th>
+                        <th class="py-2.5 px-3">Venue</th>
+                        <th class="py-2.5 px-3 text-right">Available Seats</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-100 text-sm">
+                    {% for e in upcoming_events %}
+                    <tr class="hover:bg-zinc-50/80 transition-colors">
+                        <td class="py-3 px-3 font-medium text-zinc-900">{{ e.name }}</td>
+                        <td class="py-3 px-3 text-zinc-600">{{ e.venue }}</td>
+                        <td class="py-3 px-3 text-right font-semibold text-zinc-800">{{ e.available_seats }} / {{ e.total_seats }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="py-6 text-center text-xs text-zinc-400">No upcoming events scheduled.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

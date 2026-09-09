@@ -1,0 +1,204 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}Browse Events - QuickBook Customer Portal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Upcoming Events</h1>
+        <p class="text-xs text-zinc-500 mt-1">Select an event and book tickets instantly with real-time seat availability.</p>
+    </div>
+
+    <!-- Search & Filter Controls Bar -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-sm relative">
+        <form id="filterForm" method="get" action="{% url 'customer-events' %}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- Search Text Input -->
+            <div>
+                <label class="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Search</label>
+                <div class="relative">
+                    <input type="text" id="searchInput" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Type to search name, venue..." class="w-full px-3 py-2 pr-8 rounded-xl border border-zinc-300 text-xs font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 placeholder:text-zinc-400">
+                    <div id="searchSpinner" class="absolute right-2.5 top-2.5 hidden">
+                        <i class="ri-loader-4-line animate-spin text-zinc-400 text-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date Picker -->
+            <div>
+                <label class="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Event Date</label>
+                <input type="date" id="dateInput" name="date" value="{{ request.GET.date|default:'' }}" class="w-full px-3 py-2 rounded-xl border border-zinc-300 text-xs font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900">
+            </div>
+
+            <!-- Vendor Select Dropdown -->
+            <div>
+                <label class="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Vendor</label>
+                <select id="vendorInput" name="vendor" class="w-full px-3 py-2 rounded-xl border border-zinc-300 text-xs font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 bg-white">
+                    <option value="">All Vendors</option>
+                    {% for v in vendors %}
+                    <option value="{{ v.id }}" {% if request.GET.vendor == v.id|stringformat:"i" %}selected{% endif %}>{{ v.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Submit & Reset Buttons -->
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 py-2 px-3 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 transition-colors shadow-sm flex items-center justify-center gap-1">
+                    <i class="ri-filter-3-line"></i> Filter
+                </button>
+                <button type="button" onclick="resetFilters()" class="py-2 px-3 rounded-xl bg-zinc-100 border border-zinc-200 text-zinc-600 text-xs font-semibold hover:bg-zinc-200 transition-colors">
+                    Reset
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Real-time Dynamic Events Grid Container -->
+    <div id="eventsContainer">
+        {% include 'customer/partials/events_grid.html' %}
+    </div>
+</div>
+
+<!-- Professional Booking Confirmation Modal -->
+<div id="bookingModal" class="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-zinc-200/80 rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div>
+            <h3 class="text-base font-bold text-zinc-900">Confirm Ticket Reservation</h3>
+            <p class="text-xs text-zinc-500 mt-0.5">Review your ticket booking summary.</p>
+        </div>
+
+        <div class="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200/80 text-xs text-zinc-700 space-y-1">
+            <div><span class="text-zinc-500">Event Name:</span> <span id="modalBookEventName" class="font-semibold text-zinc-900"></span></div>
+            <div><span class="text-zinc-500">Venue:</span> <span id="modalBookVenue" class="font-medium text-zinc-800"></span></div>
+            <div><span class="text-zinc-500">Date & Time:</span> <span id="modalBookDate" class="font-medium text-zinc-800"></span></div>
+            <div class="pt-1.5 border-t border-zinc-200/60 flex items-center justify-between font-bold text-sm text-zinc-900">
+                <span>Total Tickets:</span>
+                <span id="modalBookQty" class="px-2 py-0.5 rounded-lg bg-zinc-900 text-white font-mono text-xs"></span>
+            </div>
+        </div>
+
+        <p class="text-xs text-zinc-600">
+            Clicking confirm will reserve these seats under your account immediately.
+        </p>
+
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-zinc-100">
+            <button type="button" onclick="closeBookingModal()" class="px-4 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 text-zinc-700 text-xs font-semibold border border-zinc-200 transition-colors">
+                Cancel
+            </button>
+            <button type="button" onclick="submitActiveBookingForm()" class="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold shadow-sm transition-colors">
+                Confirm & Book Tickets
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let targetFormId = null;
+let debounceTimer = null;
+
+function performRealtimeSearch() {
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    params.set('ajax', '1');
+
+    const spinner = document.getElementById('searchSpinner');
+    if (spinner) spinner.classList.remove('hidden');
+
+    fetch('{% url "customer-events" %}?' + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('eventsContainer').innerHTML = html;
+        if (spinner) spinner.classList.add('hidden');
+        history.replaceState(null, '', '?' + params.toString().replace('&ajax=1', ''));
+    })
+    .catch(err => {
+        if (spinner) spinner.classList.add('hidden');
+        console.error("Realtime search error:", err);
+    });
+}
+
+function fetchPage(e, url) {
+    e.preventDefault();
+    const spinner = document.getElementById('searchSpinner');
+    if (spinner) spinner.classList.remove('hidden');
+
+    const fetchUrl = url.includes('?') ? url + '&ajax=1' : url + '?ajax=1';
+
+    fetch(fetchUrl, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('eventsContainer').innerHTML = html;
+        if (spinner) spinner.classList.add('hidden');
+        history.pushState(null, '', url);
+    });
+}
+
+// Attach real-time input event listeners
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(performRealtimeSearch, 250);
+});
+
+document.getElementById('dateInput').addEventListener('change', performRealtimeSearch);
+document.getElementById('vendorInput').addEventListener('change', performRealtimeSearch);
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('dateInput').value = '';
+    document.getElementById('vendorInput').value = '';
+    performRealtimeSearch();
+}
+
+// Modal functions
+function triggerBookingModal(btn) {
+    const eventName = btn.getAttribute('data-event-name');
+    const venue = btn.getAttribute('data-event-venue');
+    const eventDate = btn.getAttribute('data-event-date');
+    const qtyInputId = btn.getAttribute('data-qty-id');
+    const formId = btn.getAttribute('data-form-id');
+    
+    const qtyInput = document.getElementById(qtyInputId);
+    const qtyVal = qtyInput ? qtyInput.value : '1';
+    
+    if (!qtyVal || parseInt(qtyVal) <= 0) {
+        if (qtyInput) qtyInput.focus();
+        return;
+    }
+
+    targetFormId = formId;
+    document.getElementById('modalBookEventName').innerText = eventName;
+    document.getElementById('modalBookVenue').innerText = venue;
+    document.getElementById('modalBookDate').innerText = eventDate;
+    document.getElementById('modalBookQty').innerText = qtyVal + ' Ticket(s)';
+
+    const modal = document.getElementById('bookingModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeBookingModal() {
+    const modal = document.getElementById('bookingModal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+    targetFormId = null;
+}
+
+function submitActiveBookingForm() {
+    if (targetFormId) {
+        document.getElementById(targetFormId).submit();
+    }
+}
+
+// Close modal when clicking on dark backdrop
+document.getElementById('bookingModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeBookingModal();
+    }
+});
+</script>
+{% endblock %}

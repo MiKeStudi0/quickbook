@@ -1,0 +1,104 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Users - QuickBook Staff{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 pb-4 border-b border-zinc-200/60">
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900">User Management</h1>
+        <p class="text-sm text-zinc-500 mt-1">Registered customers, staff members, and referral network records</p>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="bg-white border border-zinc-200/80 rounded-2xl p-4 mb-6 shadow-sm">
+    <form method="get" class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-grow">
+            <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search users by username, email, or referral code..." class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all placeholder:text-zinc-400">
+        </div>
+        <button type="submit" class="px-5 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200/80 text-zinc-800 font-medium text-sm border border-zinc-200 transition-colors flex items-center justify-center gap-1.5">
+            <i class="ri-search-line"></i>
+            <span>Search</span>
+        </button>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-zinc-200/60 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <th class="py-3 px-3">ID</th>
+                    <th class="py-3 px-3">User</th>
+                    <th class="py-3 px-3">Email</th>
+                    <th class="py-3 px-3">Role</th>
+                    <th class="py-3 px-3">Referral Code</th>
+                    <th class="py-3 px-3">Referred By</th>
+                    <th class="py-3 px-3">Joined Date</th>
+                    <th class="py-3 px-3 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-100 text-sm">
+                {% for u in users_list %}
+                <tr class="hover:bg-zinc-50/80 transition-colors">
+                    <td class="py-3.5 px-3 text-zinc-400 font-mono text-xs">#{{ u.id }}</td>
+                    <td class="py-3.5 px-3 font-semibold text-zinc-900">{{ u.username }}</td>
+                    <td class="py-3.5 px-3 text-zinc-600">{{ u.email }}</td>
+                    <td class="py-3.5 px-3">
+                        {% if u.is_staff %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-900 text-white">Staff</span>
+                        {% elif u.is_vendor %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">Vendor</span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">Customer</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3.5 px-3"><code class="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-xs font-mono text-zinc-700">{{ u.referral_code }}</code></td>
+                    <td class="py-3.5 px-3 text-zinc-500 text-xs">{% if u.referred_by %}{{ u.referred_by.username }}{% else %}<span class="text-zinc-300">-</span>{% endif %}</td>
+                    <td class="py-3.5 px-3 text-zinc-500 text-xs">{{ u.created_at|date:"M d, Y" }}</td>
+                    <td class="py-3.5 px-3 text-right">
+                        <a href="{% url 'dashboard-user-detail' u.id %}" class="inline-flex items-center px-3 py-1.5 rounded-lg border border-zinc-200 text-xs font-medium text-zinc-700 hover:bg-zinc-100 transition-colors">
+                            <i class="ri-eye-line me-1"></i> Detail & Tree
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="py-8 text-center text-sm text-zinc-400">No users found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-zinc-100 text-xs text-zinc-500">
+        <div>
+            Showing page <span class="font-semibold text-zinc-900">{{ page_obj.number }}</span> of <span class="font-semibold text-zinc-900">{{ page_obj.paginator.num_pages }}</span>
+        </div>
+        <div class="flex items-center space-x-1.5">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% elif request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-medium transition-colors">
+                <i class="ri-arrow-left-s-line"></i>
+            </a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="px-3 py-1.5 rounded-lg bg-zinc-900 text-white font-medium shadow-xs">{{ num }}</span>
+                {% else %}
+                <a href="?page={{ num }}{% if querystring %}&{{ querystring }}{% elif request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-medium transition-colors">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% elif request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="px-2.5 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-medium transition-colors">
+                <i class="ri-arrow-right-s-line"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

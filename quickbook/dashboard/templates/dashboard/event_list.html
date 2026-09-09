@@ -1,0 +1,137 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Events - QuickBook Staff{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 pb-4 border-b border-zinc-200/60">
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Event Management</h1>
+        <p class="text-sm text-zinc-500 mt-1">Directory of published events, seat inventories, and schedules</p>
+    </div>
+    <div class="mt-4 sm:mt-0">
+        <a href="{% url 'dashboard-event-create' %}" class="inline-flex items-center px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm transition-all shadow-sm gap-2">
+            <i class="ri-add-line"></i>
+            <span>Create New Event</span>
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="bg-white border border-zinc-200/80 rounded-2xl p-4 mb-6 shadow-sm">
+    <form id="dashboardFilterForm" method="get" action="{% url 'dashboard-event-list' %}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Search Text Input -->
+        <div>
+            <label class="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Search</label>
+            <div class="relative">
+                <input type="text" id="dashboardSearchInput" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Type to search name, venue..." class="w-full px-3.5 py-2.5 pr-8 rounded-xl border border-zinc-300 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all placeholder:text-zinc-400">
+                <div id="dashboardSearchSpinner" class="absolute right-3 top-3.5 hidden">
+                    <i class="ri-loader-4-line animate-spin text-zinc-400 text-sm"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Picker -->
+        <div>
+            <label class="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Event Date</label>
+            <input type="date" id="dashboardDateInput" name="date" value="{{ request.GET.date|default:'' }}" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all">
+        </div>
+
+        <!-- Vendor Select Dropdown -->
+        {% if user.is_staff %}
+        <div>
+            <label class="block text-[10px] font-semibold uppercase text-zinc-400 mb-1">Vendor</label>
+            <select id="dashboardVendorInput" name="vendor" class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 bg-white">
+                <option value="">All Vendors</option>
+                {% for v in vendors %}
+                <option value="{{ v.id }}" {% if request.GET.vendor == v.id|stringformat:"i" %}selected{% endif %}>{{ v.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% else %}
+        <div></div>
+        {% endif %}
+
+        <!-- Filter & Clear Buttons -->
+        <div class="flex items-end gap-2">
+            <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-zinc-900 text-white font-medium text-sm hover:bg-zinc-800 transition-colors shadow-sm flex items-center justify-center gap-1.5">
+                <i class="ri-filter-3-line"></i>
+                <span>Filter</span>
+            </button>
+            <button type="button" onclick="resetDashboardFilters()" class="py-2.5 px-3.5 rounded-xl bg-zinc-100 border border-zinc-200 text-zinc-700 font-medium text-sm hover:bg-zinc-200 transition-colors">
+                Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card Container -->
+<div id="eventTableContainer" class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+    {% include 'dashboard/partials/event_table.html' %}
+</div>
+
+<script>
+let dashboardDebounce = null;
+
+function performDashboardRealtimeSearch() {
+    const form = document.getElementById('dashboardFilterForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    params.set('ajax', '1');
+
+    const spinner = document.getElementById('dashboardSearchSpinner');
+    if (spinner) spinner.classList.remove('hidden');
+
+    fetch('{% url "dashboard-event-list" %}?' + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('eventTableContainer').innerHTML = html;
+        if (spinner) spinner.classList.add('hidden');
+        history.replaceState(null, '', '?' + params.toString().replace('&ajax=1', ''));
+    })
+    .catch(err => {
+        if (spinner) spinner.classList.add('hidden');
+        console.error("Realtime search error:", err);
+    });
+}
+
+function fetchTablePage(e, url) {
+    e.preventDefault();
+    const spinner = document.getElementById('dashboardSearchSpinner');
+    if (spinner) spinner.classList.remove('hidden');
+
+    const fetchUrl = url.includes('?') ? url + '&ajax=1' : url + '?ajax=1';
+
+    fetch(fetchUrl, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('eventTableContainer').innerHTML = html;
+        if (spinner) spinner.classList.add('hidden');
+        history.pushState(null, '', url);
+    });
+}
+
+// Attach real-time input event listeners
+document.getElementById('dashboardSearchInput').addEventListener('input', function() {
+    clearTimeout(dashboardDebounce);
+    dashboardDebounce = setTimeout(performDashboardRealtimeSearch, 250);
+});
+
+document.getElementById('dashboardDateInput').addEventListener('change', performDashboardRealtimeSearch);
+const vInput = document.getElementById('dashboardVendorInput');
+if (vInput) {
+    vInput.addEventListener('change', performDashboardRealtimeSearch);
+}
+
+function resetDashboardFilters() {
+    document.getElementById('dashboardSearchInput').value = '';
+    document.getElementById('dashboardDateInput').value = '';
+    if (vInput) vInput.value = '';
+    performDashboardRealtimeSearch();
+}
+</script>
+{% endblock %}

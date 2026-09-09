@@ -1,0 +1,158 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}User Detail: {{ target_user.username }} - QuickBook Staff{% endblock %}
+
+{% block content %}
+<!-- Back Button & Header -->
+<div class="mb-8 pb-4 border-b border-zinc-200/60">
+    <a href="{% url 'dashboard-user-list' %}" class="inline-flex items-center text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors mb-3">
+        <i class="ri-arrow-left-line me-1"></i> Back to User Directory
+    </a>
+    <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center text-lg font-bold">
+            {{ target_user.username|slice:":1"|upper }}
+        </div>
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-zinc-900">{{ target_user.username }}</h1>
+            <p class="text-xs text-zinc-500 font-mono">ID: #{{ target_user.id }} &bull; {{ target_user.email }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Info & Stats Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Profile Card -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+        <h3 class="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Account Profile</h3>
+        <dl class="space-y-3.5 text-sm">
+            <div class="flex justify-between pb-2 border-b border-zinc-100">
+                <dt class="text-zinc-500">Account Role</dt>
+                <dd class="font-medium">
+                    {% if target_user.is_staff %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-900 text-white">Staff</span>
+                    {% elif target_user.is_vendor %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">Vendor</span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">Customer</span>
+                    {% endif %}
+                </dd>
+            </div>
+            <div class="flex justify-between pb-2 border-b border-zinc-100">
+                <dt class="text-zinc-500">Referral Code</dt>
+                <dd><code class="px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-xs font-mono text-zinc-800">{{ target_user.referral_code }}</code></dd>
+            </div>
+            <div class="flex justify-between pb-2 border-b border-zinc-100">
+                <dt class="text-zinc-500">Referred By</dt>
+                <dd class="font-medium text-zinc-800">
+                    {% if target_user.referred_by %}{{ target_user.referred_by.username }}{% else %}<span class="text-zinc-400 font-normal">None (Root)</span>{% endif %}
+                </dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-zinc-500">Joined Date</dt>
+                <dd class="text-zinc-800 text-xs font-medium">{{ target_user.created_at|date:"M d, Y H:i" }}</dd>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Referral Stats Summary -->
+    <div class="lg:col-span-2 bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <div>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-zinc-400 mb-4">Binary Referral Network Metrics</h3>
+            <div class="grid grid-cols-3 gap-4 text-center mt-2">
+                <div class="p-4 rounded-xl bg-zinc-50 border border-zinc-200/80">
+                    <span class="text-xs font-medium text-zinc-500 block mb-1">Left Team</span>
+                    <span class="text-3xl font-bold text-zinc-900">{{ team_stats.left_team_count }}</span>
+                </div>
+                <div class="p-4 rounded-xl bg-zinc-50 border border-zinc-200/80">
+                    <span class="text-xs font-medium text-zinc-500 block mb-1">Right Team</span>
+                    <span class="text-3xl font-bold text-zinc-900">{{ team_stats.right_team_count }}</span>
+                </div>
+                <div class="p-4 rounded-xl bg-zinc-900 text-white rounded-xl">
+                    <span class="text-xs font-medium text-zinc-300 block mb-1">Total Subtree</span>
+                    <span class="text-3xl font-bold text-white">{{ team_stats.total_team_count }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-zinc-100 text-xs text-zinc-400 flex items-center justify-between">
+            <span>Level-order BFS tree placement strategy</span>
+            <span class="font-mono">User ID: {{ target_user.id }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Booking History Table -->
+<div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm mb-8">
+    <h3 class="text-base font-semibold text-zinc-900 mb-4">Booking Activity History</h3>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-zinc-200/60 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                    <th class="py-2.5 px-3">Booking ID</th>
+                    <th class="py-2.5 px-3">Event</th>
+                    <th class="py-2.5 px-3">Venue</th>
+                    <th class="py-2.5 px-3">Event Date</th>
+                    <th class="py-2.5 px-3">Seats Booked</th>
+                    <th class="py-2.5 px-3 text-right">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-100 text-sm">
+                {% for b in user_bookings %}
+                <tr class="hover:bg-zinc-50/80 transition-colors">
+                    <td class="py-3 px-3 font-mono text-xs text-zinc-400">#{{ b.id }}</td>
+                    <td class="py-3 px-3 font-medium text-zinc-900">{{ b.event.name }}</td>
+                    <td class="py-3 px-3 text-zinc-600">{{ b.event.venue }}</td>
+                    <td class="py-3 px-3 text-zinc-500 text-xs">{{ b.event.event_date|date:"M d, Y H:i" }}</td>
+                    <td class="py-3 px-3 font-semibold text-zinc-800">{{ b.quantity }}</td>
+                    <td class="py-3 px-3 text-right">
+                        {% if b.status == 'CONFIRMED' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">Confirmed</span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">Cancelled</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="py-6 text-center text-xs text-zinc-400">No booking history recorded for this user.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Visual Referral Tree Section -->
+<div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-zinc-100 gap-3">
+        <div>
+            <h3 class="text-base font-semibold text-zinc-900">Interactive Referral Subtree</h3>
+            <p class="text-xs text-zinc-500">Visual hierarchy of user's left and right referral network nodes</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <input type="text" id="treeSearchInput" placeholder="Search node in tree..." class="px-3 py-1.5 rounded-xl border border-zinc-300 text-xs font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900">
+            <button onclick="searchTree()" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs transition-colors">Find</button>
+        </div>
+    </div>
+
+    <div class="overflow-auto py-8 text-center bg-zinc-50/70 border border-zinc-200/80 rounded-xl min-h-[220px] flex items-center justify-center" id="referralTreeContainer">
+        {% if tree_dict %}
+            {% include 'dashboard/tree_node.html' with node=tree_dict %}
+        {% else %}
+            <span class="text-xs text-zinc-400">No referral node structure exists.</span>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function searchTree() {
+    const query = document.getElementById('treeSearchInput').value.toLowerCase().trim();
+    if (!query) return;
+    const nodes = document.querySelectorAll('#referralTreeContainer [id^="node-"]');
+    nodes.forEach(n => {
+        n.classList.remove('ring-2', 'ring-zinc-900', 'bg-zinc-100');
+        if (n.innerText.toLowerCase().includes(query)) {
+            n.classList.add('ring-2', 'ring-zinc-900', 'bg-zinc-100');
+            n.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }
+    });
+}
+</script>
+{% endblock %}

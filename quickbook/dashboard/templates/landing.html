@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-zinc-50 text-zinc-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickBook Platform - Event Booking & Binary Referral Network</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Remixicon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="min-h-full flex flex-col justify-between antialiased bg-zinc-50 selection:bg-zinc-900 selection:text-white">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-zinc-200/80 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center space-x-2 text-zinc-900 font-extrabold text-xl tracking-tight">
+                <span>QuickBook</span>
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'swagger-ui' %}" target="_blank" class="px-3.5 py-1.5 rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100 text-xs font-semibold transition-colors flex items-center gap-1.5">
+                    <i class="ri-code-s-slash-line text-zinc-400"></i> API Docs (Swagger)
+                </a>
+                <a href="{% url 'customer-login' %}" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 text-xs font-semibold transition-colors shadow-sm">
+                    Customer Sign In
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Hero Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-grow flex flex-col justify-center items-center text-center">
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-zinc-900 tracking-tight leading-tight max-w-4xl">
+            Streamlined Event Ticket Booking & Referral Network
+        </h1>
+        <p class="mt-4 text-base sm:text-lg text-zinc-500 max-w-2xl font-normal leading-relaxed">
+            High-concurrency ticket reservations with atomic row locking, multi-level binary referral network with automatic BFS placement, and role-based staff dashboard.
+        </p>
+
+        <!-- Portal Cards Grid -->
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-left w-full max-w-5xl">
+            
+            <!-- Customer Portal -->
+            <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm hover:border-zinc-300 transition-all flex flex-col justify-between group">
+                <div>
+                    <h3 class="text-lg font-bold text-zinc-900 tracking-tight">Customer Portal</h3>
+                    <p class="text-xs text-zinc-500 mt-2 leading-relaxed">Browse events, book tickets in real time, view booking history, and monitor your binary referral team stats.</p>
+                    <div class="mt-4 space-y-1 font-mono text-[11px] text-zinc-400 bg-zinc-50 p-2.5 rounded-xl border border-zinc-100">
+                        <div>Login: <span class="text-zinc-700 font-semibold">alex_morgan</span></div>
+                        <div>Password: <span class="text-zinc-700 font-semibold">customer123</span></div>
+                    </div>
+                </div>
+                <a href="{% url 'customer-login' %}" class="mt-6 w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs transition-all text-center flex items-center justify-center gap-1.5 shadow-sm">
+                    <span>Open Customer Portal</span>
+                    <i class="ri-arrow-right-line"></i>
+                </a>
+            </div>
+
+            <!-- Staff & Vendor Dashboard -->
+            <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm hover:border-zinc-300 transition-all flex flex-col justify-between group">
+                <div>
+                    <h3 class="text-lg font-bold text-zinc-900 tracking-tight">Staff & Vendor Portal</h3>
+                    <p class="text-xs text-zinc-500 mt-2 leading-relaxed">Dashboard metrics, vendor management, event management, user management, and visual referral tree inspection.</p>
+                    <div class="mt-4 space-y-1 font-mono text-[11px] text-zinc-400 bg-zinc-50 p-2.5 rounded-xl border border-zinc-100">
+                        <div>Admin: <span class="text-zinc-700 font-semibold">admin / admin123</span></div>
+                        <div>Vendor: <span class="text-zinc-700 font-semibold">nexus_events / vendor123</span></div>
+                    </div>
+                </div>
+                <a href="{% url 'dashboard-login' %}" class="mt-6 w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs transition-all text-center flex items-center justify-center gap-1.5 shadow-sm">
+                    <span>Open Staff & Vendor Portal</span>
+                    <i class="ri-arrow-right-line"></i>
+                </a>
+            </div>
+
+
+            <!-- Swagger OpenAPI Docs -->
+            <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm hover:border-zinc-300 transition-all flex flex-col justify-between group">
+                <div>
+                    <h3 class="text-lg font-bold text-zinc-900 tracking-tight">REST API & Swagger</h3>
+                    <p class="text-xs text-zinc-500 mt-2 leading-relaxed">Interactive OpenAPI 3.0 documentation for REST API endpoints: Auth, Events, Bookings, and Referral Trees.</p>
+                    <div class="mt-4 space-y-1 font-mono text-[11px] text-zinc-400 bg-zinc-50 p-2.5 rounded-xl border border-zinc-100">
+                        <div>Auth Token: <a href="/api/auth/login/" target="_blank" class="text-zinc-900 font-semibold underline hover:text-zinc-700">/api/auth/login/</a></div>
+                        <div>Docs URL: <a href="{% url 'swagger-ui' %}" target="_blank" class="text-zinc-900 font-semibold underline hover:text-zinc-700">/api/docs/</a></div>
+                    </div>
+                </div>
+                <a href="{% url 'swagger-ui' %}" target="_blank" class="mt-6 w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold text-xs transition-all text-center flex items-center justify-center gap-1.5 shadow-sm">
+                    <span>View Swagger API Docs</span>
+                    <i class="ri-external-link-line"></i>
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+</html>

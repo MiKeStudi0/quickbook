@@ -1,0 +1,93 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}Binary Referral Network - QuickBook Customer Portal{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Binary Referral Network</h1>
+            <p class="text-xs text-zinc-500 mt-1">Share your referral code to invite new members into your binary placement tree.</p>
+        </div>
+        
+        <!-- Referral Code Badge -->
+        <div class="bg-white border border-zinc-200/80 rounded-2xl px-5 py-3 shadow-sm flex items-center gap-3 relative">
+            <div>
+                <span class="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Your Referral Code</span>
+                <span class="text-lg font-mono font-bold text-zinc-900 tracking-widest">{{ user.referral_code }}</span>
+            </div>
+            <button onclick="copyReferralCode('{{ user.referral_code }}')" class="px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-xs font-semibold text-zinc-700 transition-colors">
+                <span id="copyBtnText">Copy</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Team Stats Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-sm">
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 block mb-1">Left Team Count</span>
+            <span class="text-2xl font-bold text-zinc-900">{{ team_stats.left_team_count }}</span>
+            <span class="text-[11px] text-zinc-400 block mt-1">Total downline nodes on left branch</span>
+        </div>
+        <div class="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-sm">
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 block mb-1">Right Team Count</span>
+            <span class="text-2xl font-bold text-zinc-900">{{ team_stats.right_team_count }}</span>
+            <span class="text-[11px] text-zinc-400 block mt-1">Total downline nodes on right branch</span>
+        </div>
+        <div class="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-sm">
+            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 block mb-1">Total Network</span>
+            <span class="text-2xl font-bold text-zinc-900">{{ team_stats.total_team_count }}</span>
+            <span class="text-[11px] text-zinc-400 block mt-1">Combined binary downline count</span>
+        </div>
+    </div>
+
+    <!-- Visual Binary Referral Tree -->
+    <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-zinc-800 flex items-center gap-2">
+                    <i class="ri-node-tree text-zinc-400"></i> Interactive Binary Tree View
+                </h3>
+                <p class="text-xs text-zinc-500 mt-0.5">Visual representation of your referral downline hierarchy.</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <input type="text" id="treeSearchInput" placeholder="Search user in tree..." class="px-3 py-1.5 rounded-xl border border-zinc-300 text-xs font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900">
+                <button onclick="searchTree()" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 transition-colors">Find</button>
+            </div>
+        </div>
+
+        <div class="overflow-auto py-8 text-center bg-zinc-50/70 border border-zinc-200/80 rounded-xl min-h-[220px] flex items-center justify-center" id="referralTreeContainer">
+            {% if tree_dict %}
+                {% include 'dashboard/tree_node.html' with node=tree_dict %}
+            {% else %}
+                <span class="text-xs text-zinc-400">No referral node structure exists.</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyReferralCode(code) {
+    navigator.clipboard.writeText(code);
+    const btnText = document.getElementById('copyBtnText');
+    btnText.innerText = 'Copied!';
+    setTimeout(() => {
+        btnText.innerText = 'Copy';
+    }, 2000);
+}
+
+function searchTree() {
+    const query = document.getElementById('treeSearchInput').value.toLowerCase().trim();
+    if (!query) return;
+    const nodes = document.querySelectorAll('#referralTreeContainer [id^="node-"]');
+    nodes.forEach(n => {
+        n.classList.remove('ring-2', 'ring-zinc-900', 'bg-zinc-100');
+        if (n.innerText.toLowerCase().includes(query)) {
+            n.classList.add('ring-2', 'ring-zinc-900', 'bg-zinc-100');
+            n.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }
+    });
+}
+</script>
+{% endblock %}

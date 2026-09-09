@@ -1,0 +1,95 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}Customer Sign In - QuickBook{% endblock %}
+
+{% block content %}
+<div class="min-h-[75vh] flex items-center justify-center py-12">
+    <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        
+        <!-- Left Side: Sign In Form -->
+        <div class="bg-white border border-zinc-200/80 rounded-2xl p-8 shadow-sm">
+            <div class="text-left mb-6">
+                <h2 class="text-2xl font-bold tracking-tight text-zinc-900">Customer Sign In</h2>
+                <p class="text-xs text-zinc-500 mt-1">Book tickets, manage bookings & referral rewards</p>
+            </div>
+
+            {% if form.errors %}
+            <div class="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium space-y-1">
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <div class="flex items-center gap-1.5"><i class="ri-error-warning-line text-base"></i> <span>{{ error }}</span></div>
+                    {% endfor %}
+                {% else %}
+                    <div class="flex items-center gap-1.5"><i class="ri-error-warning-line text-base"></i> <span>Invalid customer username or password.</span></div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Username</label>
+                    <input type="text" id="usernameInput" name="username" required class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all placeholder:text-zinc-400" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">Password</label>
+                    <input type="password" id="passwordInput" name="password" required class="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all placeholder:text-zinc-400" placeholder="Enter password">
+                </div>
+                <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm transition-all shadow-sm flex items-center justify-center gap-2 mt-2">
+                    <span>Sign In to Customer Portal</span>
+                    <i class="ri-arrow-right-line"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Right Side: Demo Credentials Helper Card -->
+        <div class="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-zinc-100">
+                <span class="font-semibold text-zinc-800 uppercase tracking-wider text-xs flex items-center gap-1.5">
+                    <i class="ri-key-2-line text-zinc-500"></i> Demo Customer Credentials
+                </span>
+                <span class="text-[10px] text-zinc-400 font-medium">Click to Auto-fill</span>
+            </div>
+            
+            <div class="space-y-3">
+                <!-- Customer 1 -->
+                <button type="button" onclick="fillCreds('alex_morgan', 'customer123')" class="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-50 border border-zinc-200/80 hover:border-zinc-400 hover:bg-zinc-100/80 transition-all text-left group">
+                    <div>
+                        <span class="font-semibold text-zinc-900 block text-xs">Alex Morgan (Binary Tree Root)</span>
+                        <span class="text-[11px] text-zinc-500 font-mono">alex_morgan / customer123</span>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg bg-white border border-zinc-200 text-zinc-700 font-medium text-[10px] group-hover:bg-zinc-900 group-hover:text-white transition-colors">Fill Alex</span>
+                </button>
+
+                <!-- Customer 2 -->
+                <button type="button" onclick="fillCreds('sarah_connor', 'customer123')" class="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-50 border border-zinc-200/80 hover:border-zinc-400 hover:bg-zinc-100/80 transition-all text-left group">
+                    <div>
+                        <span class="font-semibold text-zinc-900 block text-xs">Sarah Connor (Left Branch)</span>
+                        <span class="text-[11px] text-zinc-500 font-mono">sarah_connor / customer123</span>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg bg-white border border-zinc-200 text-zinc-700 font-medium text-[10px] group-hover:bg-zinc-900 group-hover:text-white transition-colors">Fill Sarah</span>
+                </button>
+
+
+                <!-- Staff & Vendor Redirect Note -->
+                <div class="p-3 rounded-xl bg-zinc-50/70 border border-dashed border-zinc-200 text-left">
+                    <span class="font-semibold text-zinc-700 block text-xs flex items-center gap-1"><i class="ri-shield-user-line text-zinc-400"></i> Staff or Vendor Account?</span>
+                    <span class="text-[10px] text-zinc-400 block mt-1">Sign in at the <a href="{% url 'dashboard-login' %}" class="text-zinc-900 underline font-semibold">Staff & Vendor Portal (/dashboard/login/)</a>.</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-zinc-100 text-[11px] text-zinc-400">
+                Tip: Click any option above to automatically populate the sign-in form.
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function fillCreds(u, p) {
+    document.getElementById('usernameInput').value = u;
+    document.getElementById('passwordInput').value = p;
+}
+</script>
+{% endblock %}

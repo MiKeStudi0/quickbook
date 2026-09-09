@@ -1,0 +1,7 @@
+Django>=5.2
+djangorestframework
+djangorestframework-simplejwt
+django-filter
+drf-spectacular
+PyJWT
+sqlparse
